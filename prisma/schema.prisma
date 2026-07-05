@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String?
+  name         String?
+  provider     String        @default("email")
+  providerId   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  scans        Scan[]
+  chatMessages ChatMessage[]
+
+  @@map("users")
+}
+
+model Scan {
+  id               String      @id @default(uuid())
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  scanType         ScanType
+  targetUrl        String?
+  targetRepo       String?
+  codeSnippet      String?
+  score            Int
+  perceivableScore Int         @default(100)
+  operableScore    Int         @default(100)
+  understandableScore Int      @default(100)
+  robustScore      Int         @default(100)
+  screenshotUrl    String?
+  domSnapshot      String?
+  truncated        Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  issues           Issue[]
+
+  @@map("scans")
+}
+
+model Issue {
+  id             String    @id @default(uuid())
+  scanId         String
+  scan           Scan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  wcagCriterion  String
+  wcagName       String
+  description    String
+  selector       String?
+  lineNumber     Int?
+  severity       Severity
+  principle      Principle
+  filePath       String?
+  resolved       Boolean   @default(false)
+  appliedFix     String?
+  createdAt      DateTime  @default(now())
+
+  @@map("issues")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  scanId    String?
+  issueId   String?
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@map("chat_messages")
+}
+
+enum ScanType {
+  URL
+  CODE
+  GITHUB
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Principle {
+  PERCEIVABLE
+  OPERABLE
+  UNDERSTANDABLE
+  ROBUST
+}
