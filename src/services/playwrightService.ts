@@ -78,7 +78,9 @@ async function captureWithPlaywright(url: string, timeoutMs: number): Promise<Pl
 
     const screenshotBuffer = await page.screenshot({ fullPage: true, type: 'png' });
     const screenshotBase64 = screenshotBuffer.toString('base64');
-    const domSnapshot = await page.evaluate(() => document.documentElement.outerHTML);
+    // Use page.content() instead of page.evaluate(() => document...) to avoid
+    // TypeScript DOM lib requirement in the backend tsconfig (TS2584)
+    const domSnapshot = await page.content();
 
     await context.close();
     return { screenshotBase64, domSnapshot };
